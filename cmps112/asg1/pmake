@@ -1,0 +1,17 @@
+#!/usr/bin/perl
+#Joshua Leihe - jleihe@ucsc.edu
+use strict;
+use warnings;
+
+sub read_file {
+	my ( $f ) = @_;
+	open F, "< $f" or die "Can't open $f : $!";
+	my @f = <F>;
+	close F;
+	return wantarray ? @f : \@f;
+}
+
+my $output = "";
+while (my $output = read_file) {
+	print $output;
+}
