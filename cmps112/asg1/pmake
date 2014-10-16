@@ -20,6 +20,11 @@ sub getMacros ($) {
 	return $macro, $content;
 }
 
+sub traverseDeps ($) {
+	my ($head, %globalDeps) = @_;
+	my @currentDeps = $globalDeps{$head};
+}
+
 my %options=();
 getopts("dnf:",\%options);
 
@@ -31,8 +36,16 @@ if (!(defined $filename)) {
 }
 open(my $file, '<', $filename)
   or die "Could not open file '$filename' $!";
+  
+my $firstTarget;
+  
 while (my $line = <$file>) {
 		my ($target, $deps) = getDeps $line;
+		
+		#store first target if it exists on the current line
+		if (!(defined $firstTarget) && defined $target) {
+			$firstTarget = $target;
+		}
 		my ($macro, $content) = getMacros $line;
 		
 		$deps{$target} = $deps if defined $target;
@@ -41,11 +54,24 @@ while (my $line = <$file>) {
 
 
 # main
-my $debug = $options{d};
 
-if (defined $debug) {
+# Make system calls
+
+#check if option n was invoked
+if (defined $options{n}) {
+	#only prints out the system calls
+	print "Entering preview mode";
+} else {
+	#actually make the system calls
+	
+}
+
+#check if option d was invoked
+if (defined $options{d}) {
 	#print deps
 	print "\n\nEntering debug mode!\n\n";
+	
+	print "First target: $firstTarget\n\n";
 	for my $target (keys %deps) {
 		if (defined $target) {
 			print "\"$target\"";
