@@ -3,6 +3,7 @@
 #Some functions adapted from cmps 112 website
 use strict;
 use warnings;
+use Getopt::Std;
 
 sub getDeps ($) {
 	my ($line) = @_;
@@ -19,47 +20,58 @@ sub getMacros ($) {
 	return $macro, $content;
 }
 
+my %options=();
+getopts("dnf:",\%options);
+
 my %deps;
 my %macros;
-while (my $file = <>) {
-	for my $line (split '\n', $file) {
+my $filename = $options{f};
+if (!(defined $filename)) {
+	$filename = "Makefile";
+}
+open(my $file, '<', $filename)
+  or die "Could not open file '$filename' $!";
+while (my $line = <$file>) {
 		my ($target, $deps) = getDeps $line;
 		my ($macro, $content) = getMacros $line;
 		
 		$deps{$target} = $deps if defined $target;
 		$macros{$macro} = $content if defined $macro; 
-	}
 }
 
 
 # main
+my $debug = $options{d};
 
-#print deps
-for my $target (keys %deps) {
-	if (defined $target) {
-		print "\"$target\"";
-		my $dep = $deps{$target};
-		if (not @$dep) {
-		  print " has no dependencies";
-		}else {
-		  print " depends on";
-		  print " \"$_\"" for @$dep;
+if (defined $debug) {
+	#print deps
+	print "\n\nEntering debug mode!\n\n";
+	for my $target (keys %deps) {
+		if (defined $target) {
+			print "\"$target\"";
+			my $dep = $deps{$target};
+			if (not @$dep) {
+				print " has no dependencies";
+			}else {
+				print " depends on";
+				print " \"$_\"" for @$dep;
+			}
+			print "\n";
 		}
-		print "\n";
 	}
-}
 
-#print macros
-#~ for my $macro (keys %macros) {
-	#~ if (defined $macro) {
-		#~ print "\"$macro\"";
-		#~ my $content = $macros{$macro};
-		#~ if (not @$content) {
-		  #~ print " has no dependencies";
-		#~ }else {
-		  #~ print " depends on";
-		  #~ print " \"$_\"" for @$macro;
+	#print macros
+	#~ for my $macro (keys %macros) {
+		#~ if (defined $macro) {
+			#~ print "\"$macro\"";
+			#~ my $content = $macros{$macro};
+			#~ if (not @$content) {
+				#~ print " has no dependencies";
+			#~ }else {
+				#~ print " depends on";
+				#~ print " \"$_\"" for @$macro;
+			#~ }
+			#~ print "\n";
 		#~ }
-		#~ print "\n";
 	#~ }
-#~ }
+}
