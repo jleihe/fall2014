@@ -1,5 +1,10 @@
-line 1
+MKFILE = Makefile
 
-#line 2
-  
-line 3
+all : foo bar
+	echo all
+	
+foo :
+	echo foo
+	
+bar :
+	echo bar

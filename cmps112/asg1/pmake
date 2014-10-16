@@ -1,17 +1,65 @@
 #!/usr/bin/perl
 #Joshua Leihe - jleihe@ucsc.edu
+#Some functions adapted from cmps 112 website
 use strict;
 use warnings;
 
-sub read_file {
-	my ( $f ) = @_;
-	open F, "< $f" or die "Can't open $f : $!";
-	my @f = <F>;
-	close F;
-	return wantarray ? @f : \@f;
+sub getDeps ($) {
+	my ($line) = @_;
+	return undef unless $line =~ m/^(\S+)\s*:\s*(.*?)\s*$/;
+	my ($target, $dependency) = ($1, $2);
+	my @dependencies = split m/\s+/, $dependency;
+	return $target, \@dependencies;
 }
 
-my $output = "";
-while (my $output = read_file) {
-	print $output;
+sub getMacros ($) {
+	my ($line) = @_;
+	return undef unless $line =~ m/(\w*)\s?=(.*)/;
+	my ($macro, $content) = ($1, $2);
+	return $macro, $content;
 }
+
+my %deps;
+my %macros;
+while (my $file = <>) {
+	for my $line (split '\n', $file) {
+		my ($target, $deps) = getDeps $line;
+		my ($macro, $content) = getMacros $line;
+		
+		$deps{$target} = $deps if defined $target;
+		$macros{$macro} = $content if defined $macro; 
+	}
+}
+
+
+# main
+
+#print deps
+for my $target (keys %deps) {
+	if (defined $target) {
+		print "\"$target\"";
+		my $dep = $deps{$target};
+		if (not @$dep) {
+		  print " has no dependencies";
+		}else {
+		  print " depends on";
+		  print " \"$_\"" for @$dep;
+		}
+		print "\n";
+	}
+}
+
+#print macros
+#~ for my $macro (keys %macros) {
+	#~ if (defined $macro) {
+		#~ print "\"$macro\"";
+		#~ my $content = $macros{$macro};
+		#~ if (not @$content) {
+		  #~ print " has no dependencies";
+		#~ }else {
+		  #~ print " depends on";
+		  #~ print " \"$_\"" for @$macro;
+		#~ }
+		#~ print "\n";
+	#~ }
+#~ }
