@@ -1,0 +1,19 @@
+zusing build
+class Build : build::BuildPod
+{
+  new make()
+  {
+    podName = "helloWorld"
+    summary = ""
+    srcDirs = [`fan/`]
+    depends = ["sys 1.0"]
+  }
+}
+
+class HelloWorld {
+    Void main(Str[] args) {
+        echo("Hello World!")
+  if (args != null && args[0] is Str)
+    echo("Fantom Says: ${args[0]}!")
+    }
+}
