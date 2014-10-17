@@ -7,6 +7,19 @@ use strict;
 use warnings;
 use Getopt::Std;
 
+#Variables & Hashes
+
+my %commands;
+my %deps;
+my %macros;
+
+my $n;
+my $d;
+
+#Command Line Options
+my %options=();
+getopts("dnf:",\%options);
+
 #Functions
 
 # getDeps(): Return dependencies found in the make file in the form of
@@ -30,23 +43,20 @@ sub getMacros ($) {
 	return $macro, $content;
 }
 
-sub traverseDeps ($$$);
+sub makeSystemCalls;
 
-sub traverseDeps ($$$) {
-	my ($head, %globalDeps, %cmds) = @_;
-	my @currentDeps = $globalDeps{$head} if defined $head;
+sub makeSystemCalls {
+	my ($head) = @_;
+	my $currentDeps = $deps{$head};
 	
-	foreach my $i (@currentDeps) {
-		traverseDeps($i, %globalDeps, %cmds);
+	foreach my $i (@$currentDeps) {
+		makeSystemCalls($i);
 	}
-	print "System call: $cmds{'all'}" if defined $head;
+	print "\nSystem call: $commands{$head}\n\n" if defined $head;
 }
 
-my %options=();
-getopts("dnf:",\%options);
 
-my %deps;
-my %macros;
+
 my $filename = $options{f};
 if (!(defined $filename)) {
 	$filename = "Makefile";
@@ -54,7 +64,6 @@ if (!(defined $filename)) {
 open(my $file, '<', $filename)
   or die "Could not open file '$filename' $!";
 
-my %commands;
 my $firstTarget;
 my $commandTarget; #the target of the (possilbe) command on the next line
   
@@ -81,11 +90,15 @@ while (my $line = <$file>) {
 		$macros{$macro} = $content if defined $macro; 
 }
 
+my $container = ();
+$container->{commands} = %commands;
+$container->{macros} = %macros;
+$container->{deps} = %deps;
 
 # main
 
 #Make system calls
-traverseDeps("all", %deps, %commands);
+makeSystemCalls($firstTarget);
 
 #check if option n was invoked
 if (defined $options{n}) {

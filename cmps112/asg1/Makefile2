@@ -1,5 +1,6 @@
 MKFILE = Makefile
 
+#this is a comment
 all : foo bar
 	echo all
 	
