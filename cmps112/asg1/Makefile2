@@ -1,7 +1,9 @@
 MKFILE = Makefile
+HELLO = helloWorld
+BAR = bar
 
 #this is a comment
-all : foo bar
+all : foo ${BAR}
 	echo all
 	
 foo :
