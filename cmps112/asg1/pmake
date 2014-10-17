@@ -71,7 +71,8 @@ if (defined $options{d}) {
 	#print deps
 	print "\n\nEntering debug mode!\n\n";
 	
-	print "First target: $firstTarget\n\n";
+	print "First target: $firstTarget\n\n" if defined $firstTarget;
+	print "Target file $ARGV[$#ARGV]\n\n" if defined $ARGV[$#ARGV];
 	for my $target (keys %deps) {
 		if (defined $target) {
 			print "\"$target\"";
