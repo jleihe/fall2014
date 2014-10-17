@@ -1,28 +1,45 @@
 #!/usr/bin/perl
-#Joshua Leihe - jleihe@ucsc.edu
-#Some functions adapted from cmps 112 website
+
+# Joshua Leihe - jleihe@ucsc.edu
+# Some functions adapted from Assignments/asg1-perl-pmake/code/graph.perl
+
 use strict;
 use warnings;
 use Getopt::Std;
 
+#Functions
+
+# getDeps(): Return dependencies found in the make file in the form of
+# a target followed by an array of dependencies
 sub getDeps ($) {
 	my ($line) = @_;
+	#Search for a dependency line in the file
 	return undef unless $line =~ m/^(\S+)\s*:\s*(.*?)\s*$/;
+	#$1 is the target. $2 is a string representing the list of deps
 	my ($target, $dependency) = ($1, $2);
 	my @dependencies = split m/\s+/, $dependency;
 	return $target, \@dependencies;
 }
 
+
 sub getMacros ($) {
 	my ($line) = @_;
+	#match lines the define a macro
 	return undef unless $line =~ m/(\w*)\s?=(.*)/;
 	my ($macro, $content) = ($1, $2);
 	return $macro, $content;
 }
 
-sub traverseDeps ($) {
-	my ($head, %globalDeps) = @_;
-	my @currentDeps = $globalDeps{$head};
+sub traverseDeps ($$$);
+
+sub traverseDeps ($$$) {
+	my ($head, %globalDeps, %cmds) = @_;
+	my @currentDeps = $globalDeps{$head} if defined $head;
+	
+	foreach my $i (@currentDeps) {
+		traverseDeps($i, %globalDeps, %cmds);
+	}
+	print "System call: $cmds{'all'}" if defined $head;
 }
 
 my %options=();
@@ -36,16 +53,28 @@ if (!(defined $filename)) {
 }
 open(my $file, '<', $filename)
   or die "Could not open file '$filename' $!";
-  
+
+my %commands;
 my $firstTarget;
+my $commandTarget; #the target of the (possilbe) command on the next line
   
 while (my $line = <$file>) {
 		my ($target, $deps) = getDeps $line;
 		
-		#store first target if it exists on the current line
-		if (!(defined $firstTarget) && defined $target) {
-			$firstTarget = $target;
+		if (defined $target) {
+			#Store first target if it exists on the current line
+			$firstTarget = $target if (!(defined $firstTarget));
+			#Store current target for using parsing the next line
+			$commandTarget = $target;
 		}
+		
+		#match lines that contain commands
+		$line =~ m/^\t{1}(.*\w.*)?/;
+		if (defined $1) {
+			#add a command to the hash with the last target as it's key
+			$commands{$commandTarget} = $1;
+		}
+		
 		my ($macro, $content) = getMacros $line;
 		
 		$deps{$target} = $deps if defined $target;
@@ -55,7 +84,8 @@ while (my $line = <$file>) {
 
 # main
 
-# Make system calls
+#Make system calls
+traverseDeps("all", %deps, %commands);
 
 #check if option n was invoked
 if (defined $options{n}) {
@@ -87,6 +117,7 @@ if (defined $options{d}) {
 		}
 	}
 	
+	print "\nTesting macros hash!\n\n";
 	for my $mac (keys %macros) {
 		if (defined $mac) {
 			print "\"$mac\"";
@@ -100,19 +131,19 @@ if (defined $options{d}) {
 			print "\n";
 		}
 	}
-
-	#print macros
-	#~ for my $macro (keys %macros) {
-		#~ if (defined $macro) {
-			#~ print "\"$macro\"";
-			#~ my $content = $macros{$macro};
-			#~ if (not @$content) {
-				#~ print " has no dependencies";
-			#~ }else {
-				#~ print " depends on";
-				#~ print " \"$_\"" for @$macro;
-			#~ }
-			#~ print "\n";
-		#~ }
-	#~ }
+	
+	print "\nTesting commands hash!\n\n";
+	for my $tar (keys %commands) {
+		if (defined $tar) {
+			print "\"$tar\"";
+			my $cmd = $commands{$tar};
+			if (not defined $cmd) {
+				print " has no content";
+			}else {
+				print " is equal to ";
+				print " \"$_\"" for $cmd;
+			}
+			print "\n";
+		}
+	}
 }
