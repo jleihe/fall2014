@@ -7,18 +7,18 @@ use strict;
 use warnings;
 use Getopt::Std;
 
-#Variables & Hashes
+#Hashes for storing the various conponents of the make file
+my (%commands, %deps, %macros);
 
-my %commands;
-my %deps;
-my %macros;
-
-my $n;
-my $d;
+my $firstTarget;	#the first target encountered in the file
+my $commandTarget;	#the target of the command found on the next line
+my $systemCall;		#the call to be sent to the system
 
 #Command Line Options
 my %options=();
 getopts("dnf:",\%options);
+
+my $nonEx = $options{n};
 
 #Functions
 
@@ -34,7 +34,6 @@ sub getDeps ($) {
 	return $target, \@dependencies;
 }
 
-
 sub getMacros ($) {
 	my ($line) = @_;
 	#match lines the define a macro
@@ -44,7 +43,6 @@ sub getMacros ($) {
 }
 
 sub makeSystemCalls;
-
 sub makeSystemCalls {
 	my ($head) = @_;
 	my $currentDeps = $deps{$head};
@@ -52,111 +50,43 @@ sub makeSystemCalls {
 	foreach my $i (@$currentDeps) {
 		makeSystemCalls($i);
 	}
-	print "\nSystem call: $commands{$head}\n\n" if defined $head;
+	
+	$systemCall = $commands{$head};
+	print "\nSystem call: $systemCall\n\n" if $nonEx;
+	system($systemCall) if !$nonEx;
 }
 
-
-
+#Using the provided makefile if available otherwise use "Makefile"
 my $filename = $options{f};
 if (!(defined $filename)) {
 	$filename = "Makefile";
 }
-open(my $file, '<', $filename)
-  or die "Could not open file '$filename' $!";
 
-my $firstTarget;
-my $commandTarget; #the target of the (possilbe) command on the next line
+#Open $filename 
+open(my $file, '<', $filename) or die "Could not open '$filename' $!";
   
 while (my $line = <$file>) {
-		my ($target, $deps) = getDeps $line;
-		
-		if (defined $target) {
-			#Store first target if it exists on the current line
-			$firstTarget = $target if (!(defined $firstTarget));
-			#Store current target for using parsing the next line
-			$commandTarget = $target;
-		}
-		
-		#match lines that contain commands
-		$line =~ m/^\t{1}(.*\w.*)?/;
-		if (defined $1) {
-			#add a command to the hash with the last target as it's key
-			$commands{$commandTarget} = $1;
-		}
-		
-		my ($macro, $content) = getMacros $line;
-		
-		$deps{$target} = $deps if defined $target;
-		$macros{$macro} = $content if defined $macro; 
+	my ($target, $deps) = getDeps $line;
+
+	if (defined $target) {
+		#Store first target if it exists on the current line
+		$firstTarget = $target if (!(defined $firstTarget));
+		#Store current target for using parsing the next line
+		$commandTarget = $target;
+	}
+
+	#match lines that contain commands
+	$line =~ m/^\t{1}(.*\w.*)?/;
+	if (defined $1) {
+		#add a command to the hash with the last target as it's key
+		$commands{$commandTarget} = $1;
+	}
+
+	my ($macro, $content) = getMacros $line;
+
+	$deps{$target} = $deps if defined $target;
+	$macros{$macro} = $content if defined $macro; 
 }
-
-my $container = ();
-$container->{commands} = %commands;
-$container->{macros} = %macros;
-$container->{deps} = %deps;
-
-# main
 
 #Make system calls
 makeSystemCalls($firstTarget);
-
-#check if option n was invoked
-if (defined $options{n}) {
-	#only prints out the system calls
-	print "Entering preview mode";
-} else {
-	#actually make the system calls
-	
-}
-
-#check if option d was invoked
-if (defined $options{d}) {
-	#print deps
-	print "\n\nEntering debug mode!\n\n";
-	
-	print "First target: $firstTarget\n\n" if defined $firstTarget;
-	print "Target file $ARGV[$#ARGV]\n\n" if defined $ARGV[$#ARGV];
-	for my $target (keys %deps) {
-		if (defined $target) {
-			print "\"$target\"";
-			my $dep = $deps{$target};
-			if (not @$dep) {
-				print " has no dependencies";
-			}else {
-				print " depends on";
-				print " \"$_\"" for @$dep;
-			}
-			print "\n";
-		}
-	}
-	
-	print "\nTesting macros hash!\n\n";
-	for my $mac (keys %macros) {
-		if (defined $mac) {
-			print "\"$mac\"";
-			my $cont = $macros{$mac};
-			if (not defined $cont) {
-				print " has no content";
-			}else {
-				print " is equal to ";
-				print " \"$_\"" for $cont;
-			}
-			print "\n";
-		}
-	}
-	
-	print "\nTesting commands hash!\n\n";
-	for my $tar (keys %commands) {
-		if (defined $tar) {
-			print "\"$tar\"";
-			my $cmd = $commands{$tar};
-			if (not defined $cmd) {
-				print " has no content";
-			}else {
-				print " is equal to ";
-				print " \"$_\"" for $cmd;
-			}
-			print "\n";
-		}
-	}
-}
