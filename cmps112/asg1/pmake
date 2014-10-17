@@ -86,6 +86,20 @@ if (defined $options{d}) {
 			print "\n";
 		}
 	}
+	
+	for my $mac (keys %macros) {
+		if (defined $mac) {
+			print "\"$mac\"";
+			my $cont = $macros{$mac};
+			if (not defined $cont) {
+				print " has no content";
+			}else {
+				print " is equal to ";
+				print " \"$_\"" for $cont;
+			}
+			print "\n";
+		}
+	}
 
 	#print macros
 	#~ for my $macro (keys %macros) {
