@@ -44,33 +44,29 @@ sub getMacros ($) {
 	return $macro, $content;
 }
 
-# notes: \${[^}]+} (avoid outer macros?)
+# Expand any macros in the string provided
 sub expandMacros {
-	my $str = @_;
+	my $str = shift;
 	my $currentMacro;
-	print "\n\n$str\n";
 	while ($str =~ m/\$\{(\w+)\}/) {
 		$currentMacro = $macros{$1} or die "ERROR: $1 was not defined!";
 		$str =~ s/\$\{\w+\}/$currentMacro/;
 	}
 	
-	print "\n\n$str\n";
 	return $str;
 }
 
-sub makeSystemCalls; # Function definition need for recursion
+# Makes system calls or print out the commands deppending on cmd options
+sub makeSystemCalls;
 sub makeSystemCalls {
 	my ($head) = @_;
 	my $currentDeps = $deps{$head};
 	
 	foreach my $i (@$currentDeps) {
-		#~ $i = expandMacros($i);
-		expandMacros($i);
-		
 		makeSystemCalls($i);
 	}
 	
-	$systemCall = $commands{$head};
+	$systemCall = $commands{$head} or die "Couldn't find command $head";
 	print "\nSystem call: $systemCall\n\n" if $nonEx;
 	system($systemCall) if !$nonEx;
 }
@@ -81,8 +77,10 @@ $filename = "Makefile" if (!(defined $filename));
 
 # Open $filename 
 open(my $file, '<', $filename) or die "Could not open '$filename' $!";
-  
+
+# Loop through the makefile and extract information
 while (my $line = <$file>) {
+	$line = expandMacros($line);
 	my ($target, $deps) = getDeps $line;
 
 	if (defined $target) {
@@ -98,22 +96,10 @@ while (my $line = <$file>) {
 		# Add a command to the hash with the last target as it's key
 		$commands{$commandTarget} = $1;
 	}
-
-	my ($macro, $content) = getMacros $line;
-
-	$deps{$target} = $deps if defined $target;
-	$macros{$macro} = $content if defined $macro; 
+	my ($macro, $content) = getMacros $line; # Get macros
+	$deps{$target} = $deps if defined $target; # Store Dependencies
+	$macros{$macro} = $content if defined $macro; # Store macros
 }
 
 # Make system calls
 makeSystemCalls($firstTarget);
-
-print "\n\nTESTING\n\n";
-my $string = "adf\${BAR}asd";
-my $bar = "bar";
-print "\n$string\n\n";
-$string =~ m/\$\{(\w+)\}/;
-print "Result: $1\n" if defined $1;
-$string =~ s/\$\{\w+\}/$bar/;
-
-print "\n$string\n\n";
