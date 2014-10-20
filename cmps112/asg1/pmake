@@ -66,26 +66,35 @@ sub makeSystemCalls {
 		makeSystemCalls($i);
 	}
 	
-	$systemCall = $commands{$head} or die "Couldn't find command $head";
-	print "\nSystem call: $systemCall\n\n" if $nonEx;
-	system($systemCall) if !$nonEx;
+	# Target .o files whenever .c or .h files are found
+	$head =~ s/(.*?)\.[ch]$/$1\.o/g;
+	
+	if (exists $commands{$head}) {
+		$systemCall = $commands{$head};
+		print "\nSystem call: $systemCall\n\n" if $nonEx;
+		system($systemCall) if !$nonEx;
+	}
 }
 
 # Using the provided makefile if available otherwise use "Makefile"
 my $filename = $options{f};
-$filename = "Makefile" if (!(defined $filename));
+$filename = "Makefile" if (not defined $filename);
 
 # Open $filename 
 open(my $file, '<', $filename) or die "Could not open '$filename' $!";
 
+# Using provided target if it exists
+	$firstTarget = $ARGV[0] if exists $ARGV[0];
+
 # Loop through the makefile and extract information
 while (my $line = <$file>) {
+	# Expand any marcos found in $line
 	$line = expandMacros($line);
 	my ($target, $deps) = getDeps $line;
 
 	if (defined $target) {
 		# Store first target if it exists on the current line
-		$firstTarget = $target if (!(defined $firstTarget));
+		$firstTarget = $target if (not defined $firstTarget);
 		# Store current target for using parsing the next line
 		$commandTarget = $target;
 	}
