@@ -1,0 +1,7 @@
+#something
+
+X	= Orwell
+Y	= ${X}
+X 	= Heller
+all:
+	echo ${Y}
