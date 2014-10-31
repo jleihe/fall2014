@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 # Joshua Leihe - jleihe@ucsc.edu
-# Some functions adapted from /asg1-perl-pmake/code/graph.perl
+# Some functions adapted from Assignments/asg1-perl-pmake/code/graph.perl
 
 use strict;
 use warnings;
@@ -52,7 +52,7 @@ sub expandMacros {
 		$currentMacro = $macros{$1} or die "ERROR: $1 was not defined!";
 		$str =~ s/\$\{\w+\}/$currentMacro/;
 	}
-
+	
 	return $str;
 }
 
@@ -72,10 +72,7 @@ sub makeSystemCalls {
 	if (exists $commands{$head}) {
 		$systemCall = $commands{$head};
 		print "\nSystem call: $systemCall\n\n" if $nonEx;
-		my $result = system($systemCall) if !$nonEx;
-		if ($result) {
-			exit(1);
-		}
+		system($systemCall) if !$nonEx;
 	}
 }
 
