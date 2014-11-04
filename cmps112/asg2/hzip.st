@@ -1,7 +1,5 @@
 #! /apps/smalltalk-3.2.5/gst -f 
-
-
-"Some function used and/or adapted from classfile charfreq.st"
+"Some functions used and/or adapted from classfiles"
 
 nl := Character nl.
 
@@ -58,23 +56,6 @@ Object subclass: ZeroArray [
     ]
 
 ]
-"""
-freqtable := ZeroArray new: 256.
-
-[stdin atEnd not] whileTrue: [
-    |ordChar|
-    ordChar := stdin next asInteger.
-    freqtable incr: ordChar.
-].
-
-freqtable keysAndValuesDo: [:key :value |
-    (value notNil and: [value > 0]) ifTrue: [
-	stdout << 'freq[' << key asCharacter visible << ']=' << value
-	    << nl.
-    ]
-].
-
-"""
 
 Object subclass: Leaf [
     |char count|
@@ -114,3 +95,69 @@ Object subclass: Leaf [
 	visitor value: char value: string.
     ]
 ]
+
+
+
+FileStream extend [
+    catFile [
+	|freqtable|
+	freqtable := ZeroArray new: 256.
+	[self atEnd not] whileTrue: [
+	    |ordChar|
+	    ordChar := self next asInteger.
+	    freqtable incr: ordChar.
+	].
+	^ freqtable.
+    ]
+]
+
+"------------------------------Start-----------------------------------"
+"argument list has at least two and not more than 3 entries"
+(Smalltalk arguments size > 1) & (Smalltalk arguments size < 4)
+ifTrue: [
+    |freqtable|
+    Smalltalk arguments do: [:filename |
+	|separator|
+	separator := '::::::::::::::::::::::::::::::::'.
+	stdout << separator << nl << filename << nl << separator << nl.
+	filename = '-'
+	ifTrue: [
+	    freqtable := stdin catFile.
+	    
+	    freqtable keysAndValuesDo: [:key :value |
+		(value notNil and: [value > 0]) ifTrue: [
+		    stdout << 'freq[' << key asCharacter visible << ']=' 
+			<< value << nl.
+		]
+	    ].
+	]
+	ifFalse: [
+	    [
+		|infile|
+		infile := FileStream open: filename mode: FileStream read.
+		freqtable := infile catFile.
+		infile close.
+	    
+		freqtable keysAndValuesDo: [:key :value |
+		    (value notNil and: [value > 0]) ifTrue: [
+			stdout << 'freq[' << key asCharacter visible << ']=' 
+			    << value << nl.
+		    ]
+		].
+	    ] on: SystemExceptions.FileError do: [:signal |
+		|errno|
+		errno := File errno.
+		stdout flush.
+		stderr << execname << ': ' << filename << ': '
+			<< signal messageText << nl.
+		stderr flush.
+	    ]
+	]
+    ]
+]
+ifFalse: [
+    stdout << nl << 'ERROR: hzip.st requires input of the form' << nl.
+    stdout << '     hzip.st -dtcu inputfile [outputfile]' << nl << nl.
+    stdout << 'You entered:' << nl.
+    stdout << '     hzip.st ' << (Smalltalk arguments at: 1) << nl.
+].

@@ -1,4 +1,4 @@
-#! /apps/smalltalk-3.2.5/gst -f 
+#! /apps/smalltalk-3.2.5/gst --kernel-directory /apps/smalltalk-3.2.5/kernel/ -f
 
 nl := Character nl.
 
