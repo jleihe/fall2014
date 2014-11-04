@@ -107,6 +107,7 @@ FileStream extend [
 	    ordChar := self next asInteger.
 	    freqtable incr: ordChar.
 	].
+	freqtable at: 255 put: 1.
 	^ freqtable.
     ]
 ]
@@ -116,34 +117,20 @@ FileStream extend [
 (Smalltalk arguments size > 1) & (Smalltalk arguments size < 4)
 ifTrue: [
     |freqtable|
-    Smalltalk arguments do: [:filename |
-	|separator|
-	separator := '::::::::::::::::::::::::::::::::'.
-	stdout << separator << nl << filename << nl << separator << nl.
+    filename := Smalltalk arguments at: 2.
+    (((File name: filename) isFile ) | (filename = '-'))
+    ifTrue: [
 	filename = '-'
 	ifTrue: [
 	    freqtable := stdin catFile.
-	    
-	    freqtable keysAndValuesDo: [:key :value |
-		(value notNil and: [value > 0]) ifTrue: [
-		    stdout << 'freq[' << key asCharacter visible << ']=' 
-			<< value << nl.
-		]
-	    ].
 	]
 	ifFalse: [
 	    [
 		|infile|
-		infile := FileStream open: filename mode: FileStream read.
+		infile := FileStream open: filename mode: 
+		    FileStream read.
 		freqtable := infile catFile.
 		infile close.
-	    
-		freqtable keysAndValuesDo: [:key :value |
-		    (value notNil and: [value > 0]) ifTrue: [
-			stdout << 'freq[' << key asCharacter visible << ']=' 
-			    << value << nl.
-		    ]
-		].
 	    ] on: SystemExceptions.FileError do: [:signal |
 		|errno|
 		errno := File errno.
@@ -152,8 +139,22 @@ ifTrue: [
 			<< signal messageText << nl.
 		stderr flush.
 	    ]
-	]
+	].
+	"Iterate over freqtable and enter data into priority queue"
+	priority := SortedCollection new.
+	freqtable keysAndValuesDo: [:key :value |
+	    (value notNil and: [value > 0]) ifTrue: [
+		priority add:  (Leaf new: key count: value).
+	    ]
+	].
+	"Uncomment next line to see the sorted list"
+	"priority inspect."
     ]
+    ifFalse: [
+	stdout << nl << 'ERROR: ' << filename asString.
+	stdout << ' is not a valid input'.
+	stdout << 'file.  Please try again.' << nl << nl.
+    ].
 ]
 ifFalse: [
     stdout << nl << 'ERROR: hzip.st requires input of the form' << nl.
