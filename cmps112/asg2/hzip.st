@@ -1,4 +1,4 @@
-#! /apps/smalltalk-3.2.5/gst -f 
+#!/afs/cats.ucsc.edu/courses/cmps112-wm/usr/smalltalk/bin/gst -f
 "Some functions used and/or adapted from classfiles"
 
 nl := Character nl.
@@ -140,7 +140,7 @@ ifTrue: [
 		stderr flush.
 	    ]
 	].
-	"Iterate over freqtable and enter data into priority queue"
+"--------Iterate over freqtable and enter data into priority queue-----"
 	priority := SortedCollection new.
 	freqtable keysAndValuesDo: [:key :value |
 	    (value notNil and: [value > 0]) ifTrue: [
@@ -149,16 +149,16 @@ ifTrue: [
 	].
 	"Uncomment next line to see the sorted list"
 	"priority inspect."
+"------------------------Construct the tree----------------------------"
+	
     ]
     ifFalse: [
-	stdout << nl << 'ERROR: ' << filename asString.
-	stdout << ' is not a valid input'.
-	stdout << 'file.  Please try again.' << nl << nl.
+	stderr << nl << 'WARNING: ' << filename asString.
+	stderr << ' is not a valid input'.
+	stderr << 'file.  Please try again.' << nl << nl.
     ].
 ]
 ifFalse: [
-    stdout << nl << 'ERROR: hzip.st requires input of the form' << nl.
-    stdout << '     hzip.st -dtcu inputfile [outputfile]' << nl << nl.
-    stdout << 'You entered:' << nl.
-    stdout << '     hzip.st ' << (Smalltalk arguments at: 1) << nl.
+    stderr << nl << 'WARNING: hzip.st requires input of the form' << nl.
+    stderr << '     hzip.st -dtcu inputfile [outputfile]' << nl << nl.
 ].
